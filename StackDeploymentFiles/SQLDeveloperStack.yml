@@ -1,0 +1,212 @@
+Resources:
+  sqldeveloperdeploymentfiles9229E122:
+    Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/sql-developer-deployment-files/Resource
+  sqldeveloperdeploymentroleDE707A8B:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::Join:
+                  - ""
+                  - - ec2.
+                    - Ref: AWS::URLSuffix
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AmazonSSMManagedInstanceCore
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/sql-developer-deployment-role/Resource
+  sqldeveloperdeploymentroleDefaultPolicyEB85C2A1:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - sqldeveloperdeploymentfiles9229E122
+                  - Arn
+              - Fn::Join:
+                  - ""
+                  - - Fn::GetAtt:
+                        - sqldeveloperdeploymentfiles9229E122
+                        - Arn
+                    - /*
+          - Action:
+              - ssm:DescribeParameters
+              - ssm:GetParameters
+              - ssm:GetParameter
+              - ssm:GetParameterHistory
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ssm:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :parameter/
+                  - Ref: SQLDeveloperInstallBucket7CA882E5
+          - Action:
+              - ssm:DescribeParameters
+              - ssm:GetParameters
+              - ssm:GetParameter
+              - ssm:GetParameterHistory
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:"
+                  - Ref: AWS::Partition
+                  - ":ssm:"
+                  - Ref: AWS::Region
+                  - ":"
+                  - Ref: AWS::AccountId
+                  - :parameter/
+                  - Ref: SQLDeveloperDefaultAdminBA0FEFCA
+        Version: "2012-10-17"
+      PolicyName: sqldeveloperdeploymentroleDefaultPolicyEB85C2A1
+      Roles:
+        - Ref: sqldeveloperdeploymentroleDE707A8B
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/sql-developer-deployment-role/DefaultPolicy/Resource
+  sqldeveloperdeploymentprofile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: sqldeveloperdeploymentroleDE707A8B
+      InstanceProfileName: sql-developer-deployment-role
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/sql-developer-deployment-profile
+  SQLDeveloperInstallBucket7CA882E5:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value:
+        Ref: sqldeveloperdeploymentfiles9229E122
+      Name: SQL.Developer.InstallBucket
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/SQL.Developer.InstallBucket/Resource
+  SQLDeveloperDefaultAdminBA0FEFCA:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: .\administrator
+      Name: SQL.Developer.DefaultAdmin
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/SQL.Developer.DefaultAdmin/Resource
+  SQLDeveloperisoCCD043C1:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: SQLServer2019-x64-ENU-Dev.iso
+      Name: SQL.Developer.iso
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/SQL.Developer.iso/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAACkVPwWrDMAz9lt4dJabrsbAt22GXNqRjd+Oqw01iB1neKMb/XttlDB3eE3pPepIguyfoNs/q1zf6PLVRO0KIJ1Z6Er2zniloFv3FHgOvobIRvQuksfAsORs2ziZRVkS/hfga9IRV+WBJGLVAHN1cLRUHNxt9K+0/+8jXlNU4kLuYGZPwfilRyNjvQZFakJGq5a9JKYk3xwfkdgsS5K6Fw/tnn194WdfmC8nnZPufPGsldKU2V29MQ8GyWRDGB94B9iNYUgYBAAA=
+    Metadata:
+      aws:cdk:path: AwsSqlDeveloperStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Outputs:
+  bucketName:
+    Description: Bucket to put the install media in.
+    Value:
+      Ref: sqldeveloperdeploymentfiles9229E122
+    Export:
+      Name: Media-Bucket
+  roleName:
+    Description: Assign this role to the instance in order to install SQL Server Developer
+    Value:
+      Ref: sqldeveloperdeploymentroleDE707A8B
+    Export:
+      Name: Instance-Role-Name
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "2.0",
+  "description": "Command document to install SQL Server Developer",
+  "parameters": {
+    "S3MediaBucket": {
+      "type": "String",
+      "description": "The S3 Bucket containing the install media and configuration file.",
+      "default": "{{ ssm:SQL.Developer.InstallBucket }}"
+    },
+    "SQLAdminUser": {
+      "type": "String",
+      "description": "The default administrative user for SQL Server. DOMAIN\\USER or .\\USER",
+      "default": "{{ ssm:SQL.Developer.DefaultAdmin }}"
+    },
+    "SQLInstallISO": {
+      "type": "String",
+      "description": "The default administrative user for SQL Server. DOMAIN\\USER or .\\USER",
+      "default": "{{ ssm:SQL.Developer.iso }}"
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runPowerShellScript",
+      "name": "InstallSQL",
+      "inputs": {
+        "runCommand": [
+          "$isoLocation = \"C:\\Media\\{{ SQLInstallISO }}\" ",
+          "$pathToConfigurationFile = \"C:\\Media\\ConfigurationFile.ini\" ",
+          "$copyFileLocation = \"C:\\Media\\ConfigurationFile.ini\" ",
+          "$errorOutputFile = \"C:\\Media\\ErrorOutput.txt\" ",
+          "$standardOutputFile = \"C:\\Media\\StandardOutput.txt\" ",
+          "$user = \"{{ SQLAdminUser }}\" ",
+          " ",
+          "Import-Module AWSPowerShell ",
+          " ",
+          "New-Item \"C:\\Media\" -ItemType \"Directory\" -Force ",
+          " ",
+          "Copy-S3Object -BucketName {{ S3MediaBucket }} -Key \"SQLServer2019-x64-ENU-Dev.iso\" -LocalFile $isoLocation ",
+          "Copy-S3Object -BucketName {{ S3MediaBucket }} -Key \"ConfigurationFile.ini\" -LocalFile $pathToConfigurationFile ",
+          " ",
+          "Remove-Item $errorOutputFile -Force ",
+          "Remove-Item $standardOutputFile -Force ",
+          " ",
+          "$replaceText = (Get-Content -path $copyFileLocation -Raw) -replace \"##AdminUser##\", $user ",
+          "Set-Content $copyFileLocation $replaceText ",
+          " ",
+          "Write-Host \"Mounting SQL Server Image\" ",
+          "$drive = Mount-DiskImage -ImagePath $isoLocation ",
+          " ",
+          "Write-Host \"Getting Disk drive of the mounted image\" ",
+          "$disks = Get-WmiObject -Class Win32_logicaldisk -Filter \"DriveType = '5'\" ",
+          " ",
+          "foreach ($disk in $disks){ ",
+          " $driveLetter = $disk.DeviceID ",
+          "} ",
+          "",
+          "if ($driveLetter) ",
+          "{ ",
+           "Write-Host \"Starting the install of SQL Server\" ",
+           "Start-Process $driveLetter\\Setup.exe \"/ConfigurationFile=$copyFileLocation /IAcceptSQLServerLicenseTerms\" -Wait -RedirectStandardOutput $standardOutputFile -RedirectStandardError $errorOutputFile  ",
+          "} ",
+          " ",
+          "$standardOutput = Get-Content $standardOutputFile -Delimiter \"\\r\\n\" ",
+          " ",
+          "Write-Host $standardOutput ",
+          " ",
+          "$errorOutput = Get-Content $errorOutputFile -Delimiter \"\\r\\n\" ",
+          " ",
+          "Write-Host $errorOutput ",
+          " ",
+          "Write-Host \"Dismounting the drive.\" ",
+          " ",
+          "Dismount-DiskImage -InputObject $drive ",
+          " ",
+          "Write-Host \"If no red text then SQL Server Successfully Installed!\"           "
+        ]
+      }
+    }
+  ]
+}
