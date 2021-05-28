@@ -1,5 +1,5 @@
 # Run this to let the script run as it is not signed.
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+# Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 # Import the AWS Powershell Commandlet
 Import-Module AWSPowerShell

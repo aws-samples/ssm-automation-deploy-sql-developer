@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.0",
-  "description": "Command document to install SQL Server Developer",
+  "description": "Automation document to install SQL Server Developer",
   "parameters": {
     "S3MediaBucket": {
       "type": "String",
