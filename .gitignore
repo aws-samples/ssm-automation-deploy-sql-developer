@@ -4,7 +4,11 @@ cdk.out
 
 # Created by https://www.gitignore.io/api/csharp
 
+# Mach specific files.
 .DS_Store
+# Do not store SQL Server Binaries in the repo.
+s3DeploymentFiles/*.iso
+s3DeploymentFiles/*.exe
 
 ### Csharp ###
 ## Ignore Visual Studio temporary files, build results, and

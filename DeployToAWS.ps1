@@ -18,15 +18,22 @@ Wait-CFNStack -StackName "AwsSQLDeveloper-Deployment" -Timeout 600
 #
 $isofile = "SQLServer2019-x64-ENU-Dev.iso"
 $configFile = "ConfigurationFile.ini"
+$ssmsfile = "SSMS-Setup-ENU.exe"
+
 $S3MediaBucket = (Get-SSMParameter -Name SQL.Developer.InstallBucket).Value
-Write-S3Object -File s3DeploymentFiles\$isofile -Bucket $S3MediaBucket -Key $isofile 
-Write-S3Object -File s3DeploymentFiles\$configFile -Bucket $S3MediaBucket -Key $configFile 
+Write-S3Object -File s3DeploymentFiles\$isofile -Bucket $S3MediaBucket -Key $isofile
+Write-S3Object -File s3DeploymentFiles\$configFile -Bucket $S3MediaBucket -Key $configFile
+
+# Check if the user has downloaded SSMS and copy it if it exists.
+# Then update the SSM parameter so that the deployment script knows to deploy SSMS.
+if ((Test-Path -Path s3DeploymentFiles\$ssmsfile -PathType Leaf)) {
+  Write-S3Object -File s3DeploymentFiles\$ssmsfile -Bucket $S3MediaBucket -Key $ssmsfile
+  Write-SSMParameter -Name "SQL.Developer.SSMS" -Value $ssmsfile -Overwrite $TRUE
+}
+
 
 #
 # Create the Deployment command file to be used for deploying SQL Server Developer to your instances.
 #
 $document = Get-Content -Path .\InstallSqlDeveloper.json | Out-String
 New-SSMDocument -Name "Install-SQL-Developer" -DocumentType Command -Content $document
-
-
-

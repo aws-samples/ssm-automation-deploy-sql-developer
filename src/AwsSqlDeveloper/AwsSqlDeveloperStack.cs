@@ -50,6 +50,13 @@ namespace AwsSqlDeveloper
             });
             userParm.GrantRead(role);
 
+            var studioParm = new StringParameter(this, "SQL.Developer.SSMS", new StringParameterProps()
+            {
+                ParameterName = "SQL.Developer.SSMS",
+                StringValue = @"none"
+            });
+            studioParm.GrantRead(role);
+
             var isoParm = new StringParameter(this, "SQL.Developer.iso", new StringParameterProps()
             {
                 ParameterName = "SQL.Developer.iso",
